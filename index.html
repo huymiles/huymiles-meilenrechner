@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="de">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Huymiles Meilenrechner</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #eef5ff; color: #102349; font: 1rem/1.5 system-ui, sans-serif; }
+  main { max-width: 42rem; margin: auto; padding: 2rem 1rem; }
+  h1 { margin: 0; font-size: clamp(2rem, 7vw, 3rem); line-height: 1.1; }
+  form, #result { background: white; border-radius: 1rem; padding: 1.25rem; margin: 1rem 0; }
+  label { display: block; font-weight: 600; }
+  input { display: block; width: 100%; margin: .25rem 0 1rem; border: 1px solid #64748b; border-radius: .4rem; padding: .6rem; font: inherit; }
+  fieldset { margin: 0 0 1rem; border: 1px solid #64748b; border-radius: .5rem; display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+  fieldset input { margin-bottom: 0; }
+  button { padding: .65rem 1rem; border: 0; border-radius: .4rem; background: #164ba8; color: white; font: inherit; font-weight: 700; cursor: pointer; }
+  #result p { margin: .35rem 0; }
+</style>
+<main>
+  <h1>Huymiles Meilenrechner</h1>
+  <p>Vergleiche den Barpreis und den Meilenpreis für denselben Flug. Gib das aktuelle Transferverhältnis deines Programms ein.</p>
+  <form id="calculator">
+    <label>Barpreis pro Person in €<input name="cash" type="number" min="0" step="0.01" required placeholder="1800"></label>
+    <label>Benötigte Meilen oder Avios<input name="miles" type="number" min="1" max="1000000000" required placeholder="60000"></label>
+    <label>Steuern, Gebühren und weitere Zuzahlungen in €<input name="fees" type="number" min="0" step="0.01" required placeholder="240"></label>
+    <fieldset>
+      <legend>Transferverhältnis</legend>
+      <label>Punkte<input name="pointsRatio" type="number" min="1" max="1000000" required placeholder="5"></label>
+      <label>Meilen<input name="milesRatio" type="number" min="1" max="1000000" required placeholder="4"></label>
+    </fieldset>
+    <button>Berechnen</button>
+  </form>
+  <section id="result" aria-live="polite" hidden>
+    <p>Rechnerisch benötigte Punkte: <strong id="points"></strong></p>
+    <p>Barpreis minus Zuzahlung: <strong id="difference"></strong></p>
+    <p>Gegenwert je eingesetztem Punkt: <strong id="value"></strong></p>
+  </section>
+  <p>Der Rechner läuft lokal im Browser. Mindesttransfermengen, Transferschritte und verfügbare Prämienplätze prüfst du beim jeweiligen Programm.</p>
+</main>
+<script>
+  function calculate(cash, miles, fees, pointsRatio, milesRatio) {
+    const points = Math.ceil(miles * pointsRatio / milesRatio);
+    const differenceInCents = Math.round(cash * 100) - Math.round(fees * 100);
+    return { points, difference: differenceInCents / 100, value: differenceInCents / points };
+  }
+
+  const form = document.getElementById('calculator');
+  const integer = new Intl.NumberFormat('de-DE');
+  const euros = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' });
+  const cents = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 3 });
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const fields = form.elements;
+    const result = calculate(fields.cash.valueAsNumber, fields.miles.valueAsNumber,
+      fields.fees.valueAsNumber, fields.pointsRatio.valueAsNumber, fields.milesRatio.valueAsNumber);
+    document.getElementById('points').textContent = integer.format(result.points);
+    document.getElementById('difference').textContent = euros.format(result.difference);
+    document.getElementById('value').textContent = cents.format(result.value) + ' Cent';
+    document.getElementById('result').hidden = false;
+  });
+  form.addEventListener('input', () => {
+    document.getElementById('result').hidden = true;
+  });
+</script>
+</html>
